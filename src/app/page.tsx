@@ -1,6 +1,6 @@
-import { Typography, Container, Grid, Paper } from "@mui/material";
+import { Container, Grid, Paper } from "@mui/material";
 import Link from "next/link";
-import ThemeWrapper from "./components/ThemeWrapper";
+import Typography from "@mui/material/Typography";
 
 const calculators = [
   {
@@ -32,52 +32,41 @@ const calculators = [
 
 export default function Home() {
   return (
-    <ThemeWrapper>
-      <Container maxWidth="md">
-        <Typography
-          variant="h3"
-          component="h1"
-          gutterBottom
-          align="center"
-          sx={{ my: 4, color: "primary.main" }}
-        >
-          복슬금융계산기
-        </Typography>
-        <Grid container spacing={3}>
-          {calculators.map((calc, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <Paper
-                component={Link}
-                href={calc.path}
-                sx={{
-                  p: 3,
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  textDecoration: "none",
-                  transition: "transform 0.3s, box-shadow 0.3s",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: 10,
-                  },
-                }}
+    <Container maxWidth="md">
+      <Grid container spacing={3}>
+        {calculators.map((calc, index) => (
+          <Grid item xs={12} sm={6} md={4} key={index}>
+            <Paper
+              component={Link}
+              href={calc.path}
+              sx={{
+                p: 3,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                textDecoration: "none",
+                transition: "transform 0.3s, box-shadow 0.3s",
+                "&:hover": {
+                  transform: "translateY(-5px)",
+                  boxShadow: 10,
+                },
+              }}
+            >
+              <Typography
+                variant="h5"
+                component="h2"
+                gutterBottom
+                color="primary"
               >
-                <Typography
-                  variant="h5"
-                  component="h2"
-                  gutterBottom
-                  color="primary"
-                >
-                  {calc.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {calc.description}
-                </Typography>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    </ThemeWrapper>
+                {calc.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {calc.description}
+              </Typography>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+    </Container>
   );
 }
