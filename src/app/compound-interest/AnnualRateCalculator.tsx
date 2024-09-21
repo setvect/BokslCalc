@@ -14,6 +14,10 @@ import {
   FormLabel,
   MenuItem,
   Select,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   formatNumber,
@@ -25,6 +29,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { ko } from "date-fns/locale";
 import moment from "moment";
+import "katex/dist/katex.min.css";
+import { BlockMath } from "react-katex";
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
@@ -42,6 +48,7 @@ export default function AnnualRateCalculator() {
   const [startDateError, setStartDateError] = useState<string | null>(null);
   const [endDateError, setEndDateError] = useState<string | null>(null);
   const [yearsError, setYearsError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   const isValidDate = (date: any) => {
     return !isNaN(Date.parse(date));
@@ -155,11 +162,43 @@ export default function AnnualRateCalculator() {
     }
   };
 
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
   return (
     <Paper elevation={3} sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        연복리 환산 계산기
-      </Typography>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h6" gutterBottom>
+          연복리 환산 계산기
+        </Typography>
+        <Button variant="outlined" onClick={handleClickOpen}>
+          공식
+        </Button>
+      </div>
+      <Dialog open={open} onClose={handleClose}>
+        <DialogTitle>복리 계산 공식</DialogTitle>
+        <DialogContent>
+          <BlockMath>
+            {`\\text{연복리 수익률} = \\left( \\frac{\\text{최종 금액}}{\\text{초기 금액}} \\right)^{\\frac{1}{\\text{기간}}} - 1 \\times 100\\%`}
+          </BlockMath>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="primary">
+            닫기
+          </Button>
+        </DialogActions>
+      </Dialog>
       <FormControl component="fieldset">
         <FormLabel component="legend">기간 입력 방식</FormLabel>
         <RadioGroup
