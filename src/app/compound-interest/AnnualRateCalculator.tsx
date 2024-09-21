@@ -31,6 +31,7 @@ import { ko } from "date-fns/locale";
 import moment from "moment";
 import "katex/dist/katex.min.css";
 import { BlockMath } from "react-katex";
+import { FormulaModal } from "./FormulaModal";
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
@@ -186,19 +187,7 @@ export default function AnnualRateCalculator() {
           공식
         </Button>
       </div>
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>복리 계산 공식</DialogTitle>
-        <DialogContent>
-          <BlockMath>
-            {`\\text{연복리 수익률} = \\left( \\frac{\\text{최종 금액}}{\\text{초기 금액}} \\right)^{\\frac{1}{\\text{기간}}} - 1 \\times 100\\%`}
-          </BlockMath>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="primary">
-            닫기
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <FormulaModal open={open} onClose={handleClose} />
       <FormControl component="fieldset">
         <FormLabel component="legend">기간 입력 방식</FormLabel>
         <RadioGroup
