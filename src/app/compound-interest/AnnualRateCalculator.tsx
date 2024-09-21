@@ -12,6 +12,8 @@ import {
   FormControlLabel,
   FormControl,
   FormLabel,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import {
   formatNumber,
@@ -22,6 +24,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { ko } from "date-fns/locale";
+import moment from "moment";
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
@@ -38,6 +41,7 @@ export default function AnnualRateCalculator() {
   const [finalAmountError, setFinalAmountError] = useState<string | null>(null);
   const [startDateError, setStartDateError] = useState<string | null>(null);
   const [endDateError, setEndDateError] = useState<string | null>(null);
+  const [yearsError, setYearsError] = useState<string | null>(null);
 
   const isValidDate = (date: any) => {
     return !isNaN(Date.parse(date));
@@ -52,8 +56,8 @@ export default function AnnualRateCalculator() {
     if (inputType === "years") {
       period = parseFloat(years);
     } else if (startDate && endDate) {
-      const diffTime = endDate.getTime() - startDate.getTime();
-      period = diffTime / (1000 * 60 * 60 * 24 * 365);
+      const diffDays = moment(endDate).diff(moment(startDate), "days");
+      period = diffDays / 365;
     } else {
       setResult("날짜를 선택해주세요.");
       return;
@@ -66,29 +70,6 @@ export default function AnnualRateCalculator() {
 
   const handleCalculate = () => {
     let hasError = false;
-
-    if (!startDate) {
-      setStartDateError("시작 날짜를 선택해주세요.");
-      hasError = true;
-    } else if (!isValidDate(startDate)) {
-      setStartDateError("유효한 시작 날짜를 입력해주세요.");
-      hasError = true;
-    } else {
-      setStartDateError(null);
-    }
-
-    if (!endDate) {
-      setEndDateError("종료 날짜를 선택해주세요.");
-      hasError = true;
-    } else if (!isValidDate(endDate)) {
-      setEndDateError("유효한 종료 날짜를 입력해주세요.");
-      hasError = true;
-    } else if (startDate && endDate && startDate >= endDate) {
-      setEndDateError("시작 날짜는 종료 날짜보다 이전이어야 합니다.");
-      hasError = true;
-    } else {
-      setEndDateError(null);
-    }
 
     if (!isValidNumber(initialAmount)) {
       setInitialAmountError("유효한 숫자를 입력해주세요.");
@@ -104,7 +85,41 @@ export default function AnnualRateCalculator() {
       setFinalAmountError(null);
     }
 
+    if (inputType === "years") {
+      if (!isValidNumber(years)) {
+        setYearsError("기간(년)을 입력해주세요.");
+        hasError = true;
+      } else {
+        setYearsError(null);
+      }
+    } else {
+      if (!startDate) {
+        setStartDateError("시작 날짜를 선택해주세요.");
+        hasError = true;
+      } else if (!isValidDate(startDate)) {
+        setStartDateError("유효한 시작 날짜를 입력해주세요.");
+        hasError = true;
+      } else {
+        setStartDateError(null);
+      }
+
+      if (!endDate) {
+        setEndDateError("종료 날짜를 선택해주세요.");
+        hasError = true;
+      } else if (!isValidDate(endDate)) {
+        setEndDateError("유효한 종료 날짜를 입력해주세요.");
+        hasError = true;
+      } else if (startDate && endDate && startDate >= endDate) {
+        setEndDateError("시작 날짜는 종료 날짜보다 이전이어야 합니다.");
+        hasError = true;
+      } else {
+        setEndDateError(null);
+      }
+    }
+
     if (hasError) return;
+
+    calculateAnnualRate();
   };
 
   const handleStartDateChange = (newValue: Date | null) => {
@@ -180,13 +195,29 @@ export default function AnnualRateCalculator() {
         }}
       />
       {inputType === "years" ? (
-        <TextField
-          label="기간 (년)"
-          value={years}
-          onChange={(e) => setYears(e.target.value.replace(/[^0-9]/g, ""))}
-          fullWidth
-          margin="normal"
-        />
+        <FormControl fullWidth margin="normal">
+          <Select
+            value={years}
+            onChange={(e) => {
+              setYears(e.target.value as string);
+              if (isValidNumber(e.target.value)) {
+                setYearsError(null);
+              }
+            }}
+            displayEmpty
+            error={!!yearsError}
+          >
+            <MenuItem value="" disabled>
+              기간 (년)
+            </MenuItem>
+            {Array.from({ length: 50 }, (_, i) => (
+              <MenuItem key={i + 1} value={i + 1}>
+                {i + 1}년
+              </MenuItem>
+            ))}
+          </Select>
+          {yearsError && <Typography color="error">{yearsError}</Typography>}
+        </FormControl>
       ) : (
         <LocalizationProvider dateAdapter={AdapterDateFns} locale={ko}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
