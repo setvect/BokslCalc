@@ -6,7 +6,12 @@ export const formatNumber = (num: string) => {
 };
 
 // 콤마 제거 함수
-export const removeCommas = (num: string) => num.replace(/,/g, "");
+export const removeCommas = (num: string | number): string => {
+  if (typeof num === "number") {
+    return num.toString();
+  }
+  return num.replace(/,/g, "");
+};
 
 // 입력 처리 함수
 export const handleNumberInput = (

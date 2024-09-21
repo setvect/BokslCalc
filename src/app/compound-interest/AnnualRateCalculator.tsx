@@ -48,7 +48,8 @@ export default function AnnualRateCalculator() {
   };
 
   const isValidNumber = (value: any) => {
-    return !isNaN(value) && value !== null && value !== "";
+    const numericValue = parseFloat(removeCommas(value));
+    return !isNaN(numericValue) && isFinite(numericValue);
   };
 
   const calculateAnnualRate = () => {
@@ -141,14 +142,14 @@ export default function AnnualRateCalculator() {
   };
 
   const handleInitialAmountChange = (value: string) => {
-    setInitialAmount(value);
+    handleNumberInput(value, setInitialAmount);
     if (isValidNumber(value)) {
       setInitialAmountError(null);
     }
   };
 
   const handleFinalAmountChange = (value: string) => {
-    setFinalAmount(value);
+    handleNumberInput(value, setFinalAmount);
     if (isValidNumber(value)) {
       setFinalAmountError(null);
     }
@@ -262,9 +263,16 @@ export default function AnnualRateCalculator() {
       >
         계산하기
       </Button>
-      <Typography variant="h6" sx={{ mt: 2 }}>
-        {result}
-      </Typography>
+      {result && (
+        <Paper elevation={2} sx={{ mt: 2, p: 2, bgcolor: "primary.light" }}>
+          <Typography
+            variant="h6"
+            sx={{ color: "primary.contrastText", fontWeight: "bold" }}
+          >
+            {result}
+          </Typography>
+        </Paper>
+      )}
     </Paper>
   );
 }
