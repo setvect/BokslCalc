@@ -21,6 +21,7 @@ import {
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { ko } from "date-fns/locale";
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
@@ -30,6 +31,21 @@ export default function AnnualRateCalculator() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [result, setResult] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [initialAmountError, setInitialAmountError] = useState<string | null>(
+    null
+  );
+  const [finalAmountError, setFinalAmountError] = useState<string | null>(null);
+  const [startDateError, setStartDateError] = useState<string | null>(null);
+  const [endDateError, setEndDateError] = useState<string | null>(null);
+
+  const isValidDate = (date: any) => {
+    return !isNaN(Date.parse(date));
+  };
+
+  const isValidNumber = (value: any) => {
+    return !isNaN(value) && value !== null && value !== "";
+  };
 
   const calculateAnnualRate = () => {
     let period: number;
@@ -46,6 +62,81 @@ export default function AnnualRateCalculator() {
     const final = parseFloat(removeCommas(finalAmount));
     const rate = (Math.pow(final / initial, 1 / period) - 1) * 100;
     setResult(`연복리 수익률: ${rate.toFixed(2)}%`);
+  };
+
+  const handleCalculate = () => {
+    let hasError = false;
+
+    if (!startDate) {
+      setStartDateError("시작 날짜를 선택해주세요.");
+      hasError = true;
+    } else if (!isValidDate(startDate)) {
+      setStartDateError("유효한 시작 날짜를 입력해주세요.");
+      hasError = true;
+    } else {
+      setStartDateError(null);
+    }
+
+    if (!endDate) {
+      setEndDateError("종료 날짜를 선택해주세요.");
+      hasError = true;
+    } else if (!isValidDate(endDate)) {
+      setEndDateError("유효한 종료 날짜를 입력해주세요.");
+      hasError = true;
+    } else if (startDate && endDate && startDate >= endDate) {
+      setEndDateError("시작 날짜는 종료 날짜보다 이전이어야 합니다.");
+      hasError = true;
+    } else {
+      setEndDateError(null);
+    }
+
+    if (!isValidNumber(initialAmount)) {
+      setInitialAmountError("유효한 숫자를 입력해주세요.");
+      hasError = true;
+    } else {
+      setInitialAmountError(null);
+    }
+
+    if (!isValidNumber(finalAmount)) {
+      setFinalAmountError("유효한 숫자를 입력해주세요.");
+      hasError = true;
+    } else {
+      setFinalAmountError(null);
+    }
+
+    if (hasError) return;
+  };
+
+  const handleStartDateChange = (newValue: Date | null) => {
+    setStartDate(newValue);
+    if (newValue && isValidDate(newValue)) {
+      setStartDateError(null);
+    }
+  };
+
+  const handleEndDateChange = (newValue: Date | null) => {
+    setEndDate(newValue);
+    if (
+      newValue &&
+      isValidDate(newValue) &&
+      (!startDate || newValue > startDate)
+    ) {
+      setEndDateError(null);
+    }
+  };
+
+  const handleInitialAmountChange = (value: string) => {
+    setInitialAmount(value);
+    if (isValidNumber(value)) {
+      setInitialAmountError(null);
+    }
+  };
+
+  const handleFinalAmountChange = (value: string) => {
+    setFinalAmount(value);
+    if (isValidNumber(value)) {
+      setFinalAmountError(null);
+    }
   };
 
   return (
@@ -67,7 +158,9 @@ export default function AnnualRateCalculator() {
       <TextField
         label="초기 금액"
         value={initialAmount}
-        onChange={(e) => handleNumberInput(e.target.value, setInitialAmount)}
+        onChange={(e) => handleInitialAmountChange(e.target.value)}
+        error={!!initialAmountError}
+        helperText={initialAmountError}
         fullWidth
         margin="normal"
         InputProps={{
@@ -77,7 +170,9 @@ export default function AnnualRateCalculator() {
       <TextField
         label="최종 금액"
         value={finalAmount}
-        onChange={(e) => handleNumberInput(e.target.value, setFinalAmount)}
+        onChange={(e) => handleFinalAmountChange(e.target.value)}
+        error={!!finalAmountError}
+        helperText={finalAmountError}
         fullWidth
         margin="normal"
         InputProps={{
@@ -93,31 +188,46 @@ export default function AnnualRateCalculator() {
           margin="normal"
         />
       ) : (
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <DatePicker
-            label="시작 날짜"
-            value={startDate}
-            onChange={(newValue) => setStartDate(newValue)}
-            renderInput={(params) => (
-              <TextField {...params} fullWidth margin="normal" />
-            )}
-          />
-          <DatePicker
-            label="종료 날짜"
-            value={endDate}
-            onChange={(newValue) => setEndDate(newValue)}
-            renderInput={(params) => (
-              <TextField {...params} fullWidth margin="normal" />
-            )}
-          />
+        <LocalizationProvider dateAdapter={AdapterDateFns} locale={ko}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <DatePicker
+              label="시작 날짜"
+              value={startDate}
+              onChange={handleStartDateChange}
+              inputFormat="yyyy/MM/dd"
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  margin="normal"
+                  style={{ flex: 1, marginRight: 8 }}
+                  error={!!startDateError}
+                  helperText={startDateError}
+                />
+              )}
+            />
+            <DatePicker
+              label="종료 날짜"
+              value={endDate}
+              onChange={handleEndDateChange}
+              inputFormat="yyyy/MM/dd"
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  margin="normal"
+                  style={{ flex: 1, marginLeft: 8 }}
+                  error={!!endDateError}
+                  helperText={endDateError}
+                />
+              )}
+            />
+          </div>
         </LocalizationProvider>
       )}
       <Button
+        onClick={handleCalculate}
         variant="contained"
         color="primary"
-        onClick={calculateAnnualRate}
-        fullWidth
-        sx={{ mt: 2 }}
+        style={{ width: "100%", marginTop: 16 }}
       >
         계산하기
       </Button>
