@@ -35,132 +35,136 @@ import { FormulaModal } from "./FormulaModal";
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
-  const [initialAmount, setInitialAmount] = useState("");
-  const [finalAmount, setFinalAmount] = useState("");
-  const [years, setYears] = useState("");
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [formData, setFormData] = useState({
+    initialAmount: "",
+    finalAmount: "",
+    years: "",
+    startDate: null as Date | null,
+    endDate: null as Date | null,
+  });
+  const [errors, setErrors] = useState({
+    initialAmount: null,
+    finalAmount: null,
+    years: null,
+    startDate: null,
+    endDate: null,
+  });
   const [result, setResult] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [initialAmountError, setInitialAmountError] = useState<string | null>(
-    null
-  );
-  const [finalAmountError, setFinalAmountError] = useState<string | null>(null);
-  const [startDateError, setStartDateError] = useState<string | null>(null);
-  const [endDateError, setEndDateError] = useState<string | null>(null);
-  const [yearsError, setYearsError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
-  const isValidDate = (date: any) => {
-    return !isNaN(Date.parse(date));
-  };
-
-  const isValidNumber = (value: any) => {
+  const isValidNumber = (value: string) => {
     const numericValue = parseFloat(removeCommas(value));
     return !isNaN(numericValue) && isFinite(numericValue);
+  };
+
+  const isValidDate = (date: Date | null) => {
+    return date instanceof Date && !isNaN(date.getTime());
+  };
+
+  const isValidInput = (field: string, value: any): boolean => {
+    switch (field) {
+      case "initialAmount":
+      case "finalAmount":
+        return isValidNumber(value);
+      case "years":
+        return (
+          inputType === "years" && isValidNumber(value) && parseInt(value) > 0
+        );
+      case "startDate":
+      case "endDate":
+        return inputType === "dates" && isValidDate(value);
+      default:
+        return true;
+    }
+  };
+
+  const handleInputChange = (field: string, value: string | Date | null) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (shouldValidateField(field)) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: isValidInput(field, value)
+          ? null
+          : "유효하지 않은 입력입니다.",
+      }));
+    }
+  };
+
+  const shouldValidateField = (field: string): boolean => {
+    if (field === "initialAmount" || field === "finalAmount") {
+      return true;
+    }
+    if (inputType === "years" && field === "years") {
+      return true;
+    }
+    if (
+      inputType === "dates" &&
+      (field === "startDate" || field === "endDate")
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const handleInitialAmountChange = (value: string) => {
+    const formattedValue = formatNumber(removeCommas(value));
+    handleInputChange("initialAmount", formattedValue);
+  };
+
+  const handleFinalAmountChange = (value: string) => {
+    const formattedValue = formatNumber(removeCommas(value));
+    handleInputChange("finalAmount", formattedValue);
   };
 
   const calculateAnnualRate = () => {
     let period: number;
     if (inputType === "years") {
-      period = parseFloat(years);
-    } else if (startDate && endDate) {
-      const diffDays = moment(endDate).diff(moment(startDate), "days");
+      period = parseFloat(formData.years);
+    } else if (formData.startDate && formData.endDate) {
+      const diffDays = moment(formData.endDate).diff(
+        moment(formData.startDate),
+        "days"
+      );
       period = diffDays / 365;
     } else {
       setResult("날짜를 선택해주세요.");
       return;
     }
-    const initial = parseFloat(removeCommas(initialAmount));
-    const final = parseFloat(removeCommas(finalAmount));
+    const initial = parseFloat(removeCommas(formData.initialAmount));
+    const final = parseFloat(removeCommas(formData.finalAmount));
     const rate = (Math.pow(final / initial, 1 / period) - 1) * 100;
     setResult(`연복리 수익률: ${rate.toFixed(2)}%`);
   };
 
   const handleCalculate = () => {
     let hasError = false;
+    const newErrors = { ...errors };
 
-    if (!isValidNumber(initialAmount)) {
-      setInitialAmountError("유효한 숫자를 입력해주세요.");
-      hasError = true;
-    } else {
-      setInitialAmountError(null);
-    }
-
-    if (!isValidNumber(finalAmount)) {
-      setFinalAmountError("유효한 숫자를 입력해주세요.");
-      hasError = true;
-    } else {
-      setFinalAmountError(null);
-    }
-
-    if (inputType === "years") {
-      if (!isValidNumber(years)) {
-        setYearsError("기간(년)을 입력해주세요.");
-        hasError = true;
+    Object.entries(formData).forEach(([field, value]) => {
+      if (shouldValidateField(field)) {
+        if (!isValidInput(field, value)) {
+          newErrors[field] = "유효하지 않은 입력입니다.";
+          hasError = true;
+        } else {
+          newErrors[field] = null;
+        }
       } else {
-        setYearsError(null);
+        newErrors[field] = null;
       }
-    } else {
-      if (!startDate) {
-        setStartDateError("시작 날짜를 선택해주세요.");
-        hasError = true;
-      } else if (!isValidDate(startDate)) {
-        setStartDateError("유효한 시작 날짜를 입력해주세요.");
-        hasError = true;
-      } else {
-        setStartDateError(null);
-      }
+    });
 
-      if (!endDate) {
-        setEndDateError("종료 날짜를 선택해주세요.");
-        hasError = true;
-      } else if (!isValidDate(endDate)) {
-        setEndDateError("유효한 종료 날짜를 입력해주세요.");
-        hasError = true;
-      } else if (startDate && endDate && startDate >= endDate) {
-        setEndDateError("시작 날짜는 종료 날짜보다 이전이어야 합니다.");
-        hasError = true;
-      } else {
-        setEndDateError(null);
-      }
+    setErrors(newErrors);
+    if (!hasError) {
+      calculateAnnualRate();
     }
-
-    if (hasError) return;
-
-    calculateAnnualRate();
   };
 
   const handleStartDateChange = (newValue: Date | null) => {
-    setStartDate(newValue);
-    if (newValue && isValidDate(newValue)) {
-      setStartDateError(null);
-    }
+    handleInputChange("startDate", newValue);
   };
 
   const handleEndDateChange = (newValue: Date | null) => {
-    setEndDate(newValue);
-    if (
-      newValue &&
-      isValidDate(newValue) &&
-      (!startDate || newValue > startDate)
-    ) {
-      setEndDateError(null);
-    }
-  };
-
-  const handleInitialAmountChange = (value: string) => {
-    handleNumberInput(value, setInitialAmount);
-    if (isValidNumber(value)) {
-      setInitialAmountError(null);
-    }
-  };
-
-  const handleFinalAmountChange = (value: string) => {
-    handleNumberInput(value, setFinalAmount);
-    if (isValidNumber(value)) {
-      setFinalAmountError(null);
-    }
+    handleInputChange("endDate", newValue);
   };
 
   const handleClickOpen = () => {
@@ -201,10 +205,10 @@ export default function AnnualRateCalculator() {
       </FormControl>
       <TextField
         label="초기 금액"
-        value={initialAmount}
+        value={formData.initialAmount}
         onChange={(e) => handleInitialAmountChange(e.target.value)}
-        error={!!initialAmountError}
-        helperText={initialAmountError}
+        error={!!errors.initialAmount}
+        helperText={errors.initialAmount}
         fullWidth
         margin="normal"
         InputProps={{
@@ -213,10 +217,10 @@ export default function AnnualRateCalculator() {
       />
       <TextField
         label="최종 금액"
-        value={finalAmount}
+        value={formData.finalAmount}
         onChange={(e) => handleFinalAmountChange(e.target.value)}
-        error={!!finalAmountError}
-        helperText={finalAmountError}
+        error={!!errors.finalAmount}
+        helperText={errors.finalAmount}
         fullWidth
         margin="normal"
         InputProps={{
@@ -226,15 +230,10 @@ export default function AnnualRateCalculator() {
       {inputType === "years" ? (
         <FormControl fullWidth margin="normal">
           <Select
-            value={years}
-            onChange={(e) => {
-              setYears(e.target.value as string);
-              if (isValidNumber(e.target.value)) {
-                setYearsError(null);
-              }
-            }}
+            value={formData.years}
+            onChange={(e) => handleInputChange("years", e.target.value)}
             displayEmpty
-            error={!!yearsError}
+            error={!!errors.years}
           >
             <MenuItem value="" disabled>
               기간 (년)
@@ -245,14 +244,16 @@ export default function AnnualRateCalculator() {
               </MenuItem>
             ))}
           </Select>
-          {yearsError && <Typography color="error">{yearsError}</Typography>}
+          {errors.years && (
+            <Typography color="error">{errors.years}</Typography>
+          )}
         </FormControl>
       ) : (
         <LocalizationProvider dateAdapter={AdapterDateFns} locale={ko}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <DatePicker
               label="시작 날짜"
-              value={startDate}
+              value={formData.startDate}
               onChange={handleStartDateChange}
               inputFormat="yyyy/MM/dd"
               renderInput={(params) => (
@@ -260,14 +261,14 @@ export default function AnnualRateCalculator() {
                   {...params}
                   margin="normal"
                   style={{ flex: 1, marginRight: 8 }}
-                  error={!!startDateError}
-                  helperText={startDateError}
+                  error={!!errors.startDate}
+                  helperText={errors.startDate}
                 />
               )}
             />
             <DatePicker
               label="종료 날짜"
-              value={endDate}
+              value={formData.endDate}
               onChange={handleEndDateChange}
               inputFormat="yyyy/MM/dd"
               renderInput={(params) => (
@@ -275,8 +276,8 @@ export default function AnnualRateCalculator() {
                   {...params}
                   margin="normal"
                   style={{ flex: 1, marginLeft: 8 }}
-                  error={!!endDateError}
-                  helperText={endDateError}
+                  error={!!errors.endDate}
+                  helperText={errors.endDate}
                 />
               )}
             />
