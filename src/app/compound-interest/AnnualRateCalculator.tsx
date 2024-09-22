@@ -23,6 +23,15 @@ import "katex/dist/katex.min.css";
 import moment from "moment";
 import { useState } from "react";
 import { FormulaModal } from "./FormulaModal";
+import { ChartModal } from "./ChartModal";
+
+interface FormData {
+  initialAmount: string;
+  finalAmount: string;
+  years: string;
+  startDate: Date | null;
+  endDate: Date | null;
+}
 
 interface ErrorState {
   initialAmount: string | null;
@@ -30,17 +39,16 @@ interface ErrorState {
   years: string | null;
   startDate: string | null;
   endDate: string | null;
-  [key: string]: string | null;
 }
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     initialAmount: "",
     finalAmount: "",
     years: "",
-    startDate: null as Date | null,
-    endDate: null as Date | null,
+    startDate: null,
+    endDate: null,
   });
   const [errors, setErrors] = useState<ErrorState>({
     initialAmount: null,
@@ -51,6 +59,8 @@ export default function AnnualRateCalculator() {
   });
   const [result, setResult] = useState("");
   const [open, setOpen] = useState(false);
+  const [showChart, setShowChart] = useState(false);
+  const [chartData, setChartData] = useState<{ year: number; amount: number }[]>([]);
 
   const isValidNumber = (value: string) => {
     const numericValue = parseFloat(removeCommas(value));
@@ -67,9 +77,7 @@ export default function AnnualRateCalculator() {
       case "finalAmount":
         return isValidNumber(value);
       case "years":
-        return (
-          inputType === "years" && isValidNumber(value) && parseInt(value) > 0
-        );
+        return inputType === "years" && isValidNumber(value) && parseInt(value) > 0;
       case "startDate":
       case "endDate":
         return inputType === "dates" && isValidDate(value);
@@ -78,14 +86,12 @@ export default function AnnualRateCalculator() {
     }
   };
 
-  const handleInputChange = (field: string, value: string | Date | null) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof FormData, value: string | Date | null) => {
+    setFormData((prev: FormData) => ({ ...prev, [field]: value }));
     if (shouldValidateField(field)) {
-      setErrors((prev) => ({
+      setErrors((prev: ErrorState) => ({
         ...prev,
-        [field]: isValidInput(field, value)
-          ? null
-          : "유효하지 않은 입력입니다.",
+        [field]: isValidInput(field, value) ? null : "유효하지 않은 입력입니다.",
       }));
     }
   };
@@ -97,10 +103,7 @@ export default function AnnualRateCalculator() {
     if (inputType === "years" && field === "years") {
       return true;
     }
-    if (
-      inputType === "dates" &&
-      (field === "startDate" || field === "endDate")
-    ) {
+    if (inputType === "dates" && (field === "startDate" || field === "endDate")) {
       return true;
     }
     return false;
@@ -121,10 +124,7 @@ export default function AnnualRateCalculator() {
     if (inputType === "years") {
       period = parseFloat(formData.years);
     } else if (formData.startDate && formData.endDate) {
-      const diffDays = moment(formData.endDate).diff(
-        moment(formData.startDate),
-        "days"
-      );
+      const diffDays = moment(formData.endDate).diff(moment(formData.startDate), "days");
       period = diffDays / 365;
     } else {
       setResult("날짜를 선택해주세요.");
@@ -134,6 +134,13 @@ export default function AnnualRateCalculator() {
     const final = parseFloat(removeCommas(formData.finalAmount));
     const rate = (Math.pow(final / initial, 1 / period) - 1) * 100;
     setResult(`연복리 수익률: ${rate.toFixed(2)}%`);
+
+    // 차트 데이터 생성
+    const data = Array.from({ length: 51 }, (_, i) => ({
+      year: i,
+      amount: initial * Math.pow(1 + rate / 100, i),
+    }));
+    setChartData(data);
   };
 
   const handleCalculate = () => {
@@ -143,13 +150,13 @@ export default function AnnualRateCalculator() {
     Object.entries(formData).forEach(([field, value]) => {
       if (shouldValidateField(field)) {
         if (!isValidInput(field, value)) {
-          newErrors[field] = "유효하지 않은 입력입니다.";
+          newErrors[field as keyof ErrorState] = "유효하지 않은 입력입니다.";
           hasError = true;
         } else {
-          newErrors[field] = null;
+          newErrors[field as keyof ErrorState] = null;
         }
       } else {
-        newErrors[field] = null;
+        newErrors[field as keyof ErrorState] = null;
       }
     });
 
@@ -175,6 +182,14 @@ export default function AnnualRateCalculator() {
     setOpen(false);
   };
 
+  const handleShowChart = () => {
+    setShowChart(true);
+  };
+
+  const handleCloseChart = () => {
+    setShowChart(false);
+  };
+
   return (
     <Paper elevation={3} sx={{ p: 3 }}>
       <div
@@ -194,11 +209,7 @@ export default function AnnualRateCalculator() {
       <FormulaModal open={open} onClose={handleClose} />
       <FormControl component="fieldset">
         <FormLabel component="legend">기간 입력 방식</FormLabel>
-        <RadioGroup
-          row
-          value={inputType}
-          onChange={(e) => setInputType(e.target.value as "years" | "dates")}
-        >
+        <RadioGroup row value={inputType} onChange={(e) => setInputType(e.target.value as "years" | "dates")}>
           <FormControlLabel value="years" control={<Radio />} label="년수" />
           <FormControlLabel value="dates" control={<Radio />} label="날짜" />
         </RadioGroup>
@@ -231,12 +242,7 @@ export default function AnnualRateCalculator() {
       />
       {inputType === "years" ? (
         <FormControl fullWidth margin="normal">
-          <Select
-            value={formData.years}
-            onChange={(e) => handleInputChange("years", e.target.value)}
-            displayEmpty
-            error={!!errors.years}
-          >
+          <Select value={formData.years} onChange={(e) => handleInputChange("years", e.target.value)} displayEmpty error={!!errors.years}>
             <MenuItem value="" disabled>
               기간 (년)
             </MenuItem>
@@ -246,9 +252,7 @@ export default function AnnualRateCalculator() {
               </MenuItem>
             ))}
           </Select>
-          {errors.years && (
-            <Typography color="error">{errors.years}</Typography>
-          )}
+          {errors.years && <Typography color="error">{errors.years}</Typography>}
         </FormControl>
       ) : (
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
@@ -290,24 +294,20 @@ export default function AnnualRateCalculator() {
           </div>
         </LocalizationProvider>
       )}
-      <Button
-        onClick={handleCalculate}
-        variant="contained"
-        color="primary"
-        style={{ width: "100%", marginTop: 16 }}
-      >
+      <Button onClick={handleCalculate} variant="contained" color="primary" style={{ width: "100%", marginTop: 16 }}>
         계산하기
       </Button>
       {result && (
         <Paper elevation={2} sx={{ mt: 2, p: 2, bgcolor: "primary.light" }}>
-          <Typography
-            variant="h6"
-            sx={{ color: "primary.contrastText", fontWeight: "bold" }}
-          >
+          <Typography variant="h6" sx={{ color: "primary.contrastText", fontWeight: "bold" }}>
             {result}
           </Typography>
+          <Button onClick={handleShowChart} variant="contained" color="secondary" sx={{ mt: 1 }}>
+            수익률 차트보기
+          </Button>
         </Paper>
       )}
+      <ChartModal open={showChart} onClose={handleCloseChart} chartData={chartData} />
     </Paper>
   );
 }
