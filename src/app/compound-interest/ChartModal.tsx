@@ -12,8 +12,8 @@ export const ChartModal: React.FC<ChartModalProps> = ({ open, onClose, chartData
   const theme = useTheme();
 
   const formatLargeNumber = (value: number) => {
-    if (value >= 1000000000) {
-      return `${(value / 1000000000).toFixed(1)}십억`;
+    if (value >= 1000000000000) {
+      return `${(value / 1000000000000).toFixed(1)}조`;
     } else if (value >= 100000000) {
       return `${(value / 100000000).toFixed(1)}억`;
     } else if (value >= 10000) {
@@ -24,7 +24,7 @@ export const ChartModal: React.FC<ChartModalProps> = ({ open, onClose, chartData
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle style={{ textAlign: "center" }}>50년간 금액 변화</DialogTitle>
+      <DialogTitle style={{ textAlign: "center" }}>30년간 금액 변화</DialogTitle>
       <DialogContent>
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>

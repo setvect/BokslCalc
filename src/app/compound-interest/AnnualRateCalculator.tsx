@@ -136,7 +136,7 @@ export default function AnnualRateCalculator() {
     setResult(`연복리 수익률: ${rate.toFixed(2)}%`);
 
     // 차트 데이터 생성
-    const data = Array.from({ length: 51 }, (_, i) => ({
+    const data = Array.from({ length: 31 }, (_, i) => ({
       year: i,
       amount: initial * Math.pow(1 + rate / 100, i),
     }));
@@ -298,11 +298,14 @@ export default function AnnualRateCalculator() {
         계산하기
       </Button>
       {result && (
-        <Paper elevation={2} sx={{ mt: 2, p: 2, bgcolor: "primary.light" }}>
+        <Paper
+          elevation={2}
+          sx={{ mt: 2, p: 2, bgcolor: "primary.light", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+        >
           <Typography variant="h6" sx={{ color: "primary.contrastText", fontWeight: "bold" }}>
             {result}
           </Typography>
-          <Button onClick={handleShowChart} variant="contained" color="secondary" sx={{ mt: 1 }}>
+          <Button onClick={handleShowChart} variant="contained" color="info">
             수익률 차트보기
           </Button>
         </Paper>
