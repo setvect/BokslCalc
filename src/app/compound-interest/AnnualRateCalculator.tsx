@@ -1,37 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import { formatNumber, removeCommas } from "@/utils/numberFormat";
 import {
-  TextField,
   Button,
-  Typography,
-  Paper,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
   InputAdornment,
+  MenuItem,
+  Paper,
   Radio,
   RadioGroup,
-  FormControlLabel,
-  FormControl,
-  FormLabel,
-  MenuItem,
   Select,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  TextField,
+  Typography,
 } from "@mui/material";
-import {
-  formatNumber,
-  removeCommas,
-  handleNumberInput,
-} from "@/utils/numberFormat";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { ko } from "date-fns/locale";
-import moment from "moment";
 import "katex/dist/katex.min.css";
-import { BlockMath } from "react-katex";
+import moment from "moment";
+import { useState } from "react";
 import { FormulaModal } from "./FormulaModal";
+
+interface ErrorState {
+  initialAmount: string | null;
+  finalAmount: string | null;
+  years: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  [key: string]: string | null;
+}
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
@@ -42,7 +42,7 @@ export default function AnnualRateCalculator() {
     startDate: null as Date | null,
     endDate: null as Date | null,
   });
-  const [errors, setErrors] = useState({
+  const [errors, setErrors] = useState<ErrorState>({
     initialAmount: null,
     finalAmount: null,
     years: null,
@@ -138,7 +138,7 @@ export default function AnnualRateCalculator() {
 
   const handleCalculate = () => {
     let hasError = false;
-    const newErrors = { ...errors };
+    const newErrors: ErrorState = { ...errors };
 
     Object.entries(formData).forEach(([field, value]) => {
       if (shouldValidateField(field)) {
@@ -214,6 +214,7 @@ export default function AnnualRateCalculator() {
         InputProps={{
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
+        inputProps={{ maxLength: 20 }}
       />
       <TextField
         label="최종 금액"
@@ -226,6 +227,7 @@ export default function AnnualRateCalculator() {
         InputProps={{
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
+        inputProps={{ maxLength: 20 }}
       />
       {inputType === "years" ? (
         <FormControl fullWidth margin="normal">
@@ -249,13 +251,15 @@ export default function AnnualRateCalculator() {
           )}
         </FormControl>
       ) : (
-        <LocalizationProvider dateAdapter={AdapterDateFns} locale={ko}>
+        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <DatePicker
               label="시작 날짜"
               value={formData.startDate}
               onChange={handleStartDateChange}
               inputFormat="yyyy/MM/dd"
+              views={["year", "month", "day"]}
+              openTo="year"
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -271,6 +275,8 @@ export default function AnnualRateCalculator() {
               value={formData.endDate}
               onChange={handleEndDateChange}
               inputFormat="yyyy/MM/dd"
+              views={["year", "month", "day"]}
+              openTo="year"
               renderInput={(params) => (
                 <TextField
                   {...params}
