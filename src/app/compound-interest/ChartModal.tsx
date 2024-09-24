@@ -1,5 +1,6 @@
 import React from "react";
-import { Dialog, DialogTitle, DialogContent, useTheme } from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, useTheme, IconButton, Box } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 interface ChartModalProps {
@@ -24,7 +25,23 @@ export const ChartModal: React.FC<ChartModalProps> = ({ open, onClose, chartData
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle style={{ textAlign: "center" }}>30년간 금액 변화</DialogTitle>
+      <DialogTitle>
+        <Box display="flex" justifyContent="center" alignItems="center">
+          30년간 금액 변화
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
       <DialogContent>
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>

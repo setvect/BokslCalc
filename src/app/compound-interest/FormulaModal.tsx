@@ -1,14 +1,7 @@
 import React from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  Box,
-} from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Button, Typography, Box } from "@mui/material";
 import { BlockMath } from "react-katex";
+import CloseIcon from "@mui/icons-material/Close";
 
 interface FormulaModalProps {
   open: boolean;
@@ -18,7 +11,23 @@ interface FormulaModalProps {
 export function FormulaModal({ open, onClose }: FormulaModalProps) {
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogTitle>복리 계산 공식</DialogTitle>
+      <DialogTitle>
+        <Box display="flex" justifyContent="center" alignItems="center">
+          복리 계산 공식
+          <IconButton
+            aria-label="close"
+            onClick={onClose}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: (theme) => theme.palette.grey[500],
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
+      </DialogTitle>
       <DialogContent>
         <Box mb={3}>
           <BlockMath>
