@@ -9,6 +9,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { ko } from "date-fns/locale";
 import moment from "moment";
+import { FinalAmountFormulaModal } from "./FinalAmountFormulaModal";
 
 interface FormData {
   initialAmount: string;
@@ -43,6 +44,7 @@ export default function FinalAmountCalculator() {
     endDate: null,
   });
   const [result, setResult] = useState("");
+  const [openFormula, setOpenFormula] = useState(false);
 
   const isValidNumber = (value: string) => {
     const numericValue = parseFloat(removeCommas(value));
@@ -152,11 +154,31 @@ export default function FinalAmountCalculator() {
     handleInputChange("endDate", newValue);
   };
 
+  const handleClickOpenFormula = () => {
+    setOpenFormula(true);
+  };
+
+  const handleCloseFormula = () => {
+    setOpenFormula(false);
+  };
+
   return (
     <Paper elevation={3} sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        최종 금액 계산기
-      </Typography>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h6" gutterBottom>
+          최종 금액 계산기
+        </Typography>
+        <Button variant="outlined" onClick={handleClickOpenFormula}>
+          공식
+        </Button>
+      </div>
+      <FinalAmountFormulaModal open={openFormula} onClose={handleCloseFormula} />
       <FormControl component="fieldset">
         <FormLabel component="legend">기간 입력 방식</FormLabel>
         <RadioGroup row value={inputType} onChange={(e) => setInputType(e.target.value as "years" | "dates")}>
