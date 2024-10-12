@@ -148,10 +148,28 @@ export default function FinalAmountCalculator() {
 
   const handleStartDateChange = (newValue: Date | null) => {
     handleInputChange("startDate", newValue);
+    validateDates(newValue, formData.endDate);
   };
 
   const handleEndDateChange = (newValue: Date | null) => {
     handleInputChange("endDate", newValue);
+    validateDates(formData.startDate, newValue);
+  };
+
+  const validateDates = (startDate: Date | null, endDate: Date | null) => {
+    if (startDate && endDate && startDate > endDate) {
+      setErrors((prev) => ({
+        ...prev,
+        startDate: "시작 날짜는 종료 날짜보다 늦을 수 없습니다.",
+        endDate: "종료 날짜는 시작 날짜보다 빠를 수 없습니다.",
+      }));
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        startDate: null,
+        endDate: null,
+      }));
+    }
   };
 
   const handleClickOpenFormula = () => {
@@ -195,6 +213,7 @@ export default function FinalAmountCalculator() {
         margin="normal"
         error={!!errors.initialAmount}
         helperText={errors.initialAmount}
+        inputProps={{ maxLength: 15 }}
         InputProps={{
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
@@ -202,13 +221,14 @@ export default function FinalAmountCalculator() {
       />
 
       <TextField
-        label="연복리 수익률 (%)"
+        label="연복리 수익률(%)"
         value={formData.interestRate}
         onChange={(e) => handleInputChange("interestRate", e.target.value)}
         fullWidth
         margin="normal"
         error={!!errors.interestRate}
         helperText={errors.interestRate}
+        inputProps={{ maxLength: 5 }}
         InputProps={{
           endAdornment: <InputAdornment position="end">%</InputAdornment>,
         }}
@@ -266,7 +286,7 @@ export default function FinalAmountCalculator() {
                 <TextField
                   {...params}
                   margin="normal"
-                  sx={{ flex: 1, marginLeft: 8 }}
+                  sx={{ flex: 1, marginLeft: 1 }}
                   error={!!errors.endDate}
                   helperText={errors.endDate}
                   autoComplete="off"

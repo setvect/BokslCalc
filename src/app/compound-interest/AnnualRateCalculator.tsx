@@ -168,10 +168,28 @@ export default function AnnualRateCalculator() {
 
   const handleStartDateChange = (newValue: Date | null) => {
     handleInputChange("startDate", newValue);
+    validateDates(newValue, formData.endDate);
   };
 
   const handleEndDateChange = (newValue: Date | null) => {
     handleInputChange("endDate", newValue);
+    validateDates(formData.startDate, newValue);
+  };
+
+  const validateDates = (startDate: Date | null, endDate: Date | null) => {
+    if (startDate && endDate && startDate > endDate) {
+      setErrors((prev) => ({
+        ...prev,
+        startDate: "시작 날짜는 종료 날짜보다 늦을 수 없습니다.",
+        endDate: "종료 날짜는 시작 날짜보다 빠를 수 없습니다.",
+      }));
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        startDate: null,
+        endDate: null,
+      }));
+    }
   };
 
   const handleClickOpenFormula = () => {
@@ -226,7 +244,7 @@ export default function AnnualRateCalculator() {
         InputProps={{
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
-        inputProps={{ maxLength: 20 }}
+        inputProps={{ maxLength: 15 }}
       />
       <TextField
         label="최종 금액"
@@ -240,7 +258,7 @@ export default function AnnualRateCalculator() {
         InputProps={{
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
-        inputProps={{ maxLength: 20 }}
+        inputProps={{ maxLength: 15 }}
       />
       {inputType === "years" ? (
         <FormControl fullWidth margin="normal">
