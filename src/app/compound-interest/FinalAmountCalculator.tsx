@@ -8,6 +8,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { ko } from "date-fns/locale";
+import moment from "moment";
 
 interface FormData {
   initialAmount: string;
@@ -21,11 +22,12 @@ interface FormErrors {
   initialAmount: string | null;
   years: string | null;
   interestRate: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
+  startDate: string | null;
+  endDate: string | null;
 }
 
 export default function FinalAmountCalculator() {
+  const [inputType, setInputType] = useState<"years" | "dates">("years");
   const [formData, setFormData] = useState<FormData>({
     initialAmount: "",
     years: "",
@@ -33,7 +35,6 @@ export default function FinalAmountCalculator() {
     startDate: null,
     endDate: null,
   });
-  const [result, setResult] = useState("");
   const [errors, setErrors] = useState<FormErrors>({
     initialAmount: null,
     years: null,
@@ -41,65 +42,30 @@ export default function FinalAmountCalculator() {
     startDate: null,
     endDate: null,
   });
-  const [inputType, setInputType] = useState<"years" | "dates">("years");
+  const [result, setResult] = useState("");
 
-  const validateInputs = () => {
-    let valid = true;
-    let newErrors = { ...errors };
-
-    if (!formData.initialAmount) {
-      newErrors.initialAmount = "초기 금액을 입력하세요.";
-      valid = false;
-    }
-    if (inputType === "years" && !formData.years) {
-      newErrors.years = "기간을 입력하세요.";
-      valid = false;
-    }
-    if (inputType === "dates") {
-      if (!formData.startDate) {
-        newErrors.startDate = "시작 날짜를 선택하세요.";
-        valid = false;
-      }
-      if (!formData.endDate) {
-        newErrors.endDate = "종료 날짜를 선택하세요.";
-        valid = false;
-      }
-    }
-    if (!formData.interestRate) {
-      newErrors.interestRate = "연복리 수익률을 입력하세요.";
-      valid = false;
-    }
-
-    setErrors(newErrors);
-    return valid;
+  const isValidNumber = (value: string) => {
+    const numericValue = parseFloat(removeCommas(value));
+    return !isNaN(numericValue) && isFinite(numericValue);
   };
 
-  const calculateFinalAmount = () => {
-    if (!validateInputs()) {
-      return;
+  const isValidDate = (date: Date | null) => {
+    return date instanceof Date && !isNaN(date.getTime());
+  };
+
+  const isValidInput = (field: string, value: any): boolean => {
+    switch (field) {
+      case "initialAmount":
+      case "interestRate":
+        return isValidNumber(value);
+      case "years":
+        return inputType === "years" && isValidNumber(value) && parseInt(value) > 0;
+      case "startDate":
+      case "endDate":
+        return inputType === "dates" && isValidDate(value);
+      default:
+        return true;
     }
-
-    const initial = parseFloat(removeCommas(formData.initialAmount));
-    const rate = parseFloat(formData.interestRate) / 100;
-    let yearsNum: number;
-
-    if (inputType === "years") {
-      yearsNum = parseFloat(formData.years);
-    } else {
-      if (!formData.startDate || !formData.endDate) {
-        setErrors((prev) => ({
-          ...prev,
-          startDate: formData.startDate ? null : "시작 날짜를 선택하세요.",
-          endDate: formData.endDate ? null : "종료 날짜를 선택하세요.",
-        }));
-        return;
-      }
-      const diffTime = Math.abs(formData.endDate.getTime() - formData.startDate.getTime());
-      yearsNum = diffTime / (1000 * 60 * 60 * 24 * 365.25);
-    }
-
-    const final = initial * Math.pow(1 + rate, yearsNum);
-    setResult(`최종 금액: ${formatNumber(final.toFixed(2))}원`);
   };
 
   const handleInputChange = (field: keyof FormData, value: string | Date | null) => {
@@ -112,6 +78,70 @@ export default function FinalAmountCalculator() {
       }
     }
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (shouldValidateField(field)) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: isValidInput(field, value) ? null : "유효하지 않은 입력입니다.",
+      }));
+    }
+  };
+
+  const shouldValidateField = (field: string): boolean => {
+    if (field === "initialAmount" || field === "interestRate") {
+      return true;
+    }
+    if (inputType === "years" && field === "years") {
+      return true;
+    }
+    if (inputType === "dates" && (field === "startDate" || field === "endDate")) {
+      return true;
+    }
+    return false;
+  };
+
+  const handleInitialAmountChange = (value: string) => {
+    const formattedValue = formatNumber(removeCommas(value));
+    handleInputChange("initialAmount", formattedValue);
+  };
+
+  const calculateFinalAmount = () => {
+    let period: number;
+    if (inputType === "years") {
+      period = parseFloat(formData.years);
+    } else if (formData.startDate && formData.endDate) {
+      const diffDays = moment(formData.endDate).diff(moment(formData.startDate), "days");
+      period = diffDays / 365;
+    } else {
+      setResult("날짜를 선택해주세요.");
+      return;
+    }
+    const initial = parseFloat(removeCommas(formData.initialAmount));
+    const rate = parseFloat(formData.interestRate) / 100;
+    const final = initial * Math.pow(1 + rate, period);
+    setResult(`최종 금액: ${formatNumber(final.toFixed(2))}원`);
+  };
+
+  const handleCalculate = () => {
+    let hasError = false;
+    const newErrors: FormErrors = { ...errors };
+
+    Object.entries(formData).forEach(([field, value]) => {
+      if (shouldValidateField(field)) {
+        if (!isValidInput(field, value)) {
+          newErrors[field as keyof FormErrors] = "유효하지 않은 입력입니다.";
+          hasError = true;
+        } else {
+          newErrors[field as keyof FormErrors] = null;
+        }
+      } else {
+        newErrors[field as keyof FormErrors] = null;
+      }
+    });
+
+    setErrors(newErrors);
+    if (!hasError) {
+      calculateFinalAmount();
+    }
   };
 
   const handleStartDateChange = (newValue: Date | null) => {
@@ -138,7 +168,7 @@ export default function FinalAmountCalculator() {
       <TextField
         label="초기 금액"
         value={formData.initialAmount}
-        onChange={(e) => handleInputChange("initialAmount", e.target.value)}
+        onChange={(e) => handleInitialAmountChange(e.target.value)}
         fullWidth
         margin="normal"
         error={!!errors.initialAmount}
@@ -224,7 +254,7 @@ export default function FinalAmountCalculator() {
           </div>
         </LocalizationProvider>
       )}
-      <Button variant="contained" color="primary" onClick={calculateFinalAmount} fullWidth sx={{ mt: 2 }}>
+      <Button variant="contained" color="primary" onClick={handleCalculate} fullWidth sx={{ mt: 2 }}>
         계산하기
       </Button>
       <Typography variant="h6" sx={{ mt: 2 }}>
