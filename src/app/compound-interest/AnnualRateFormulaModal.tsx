@@ -3,12 +3,12 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Button, 
 import { BlockMath } from "react-katex";
 import CloseIcon from "@mui/icons-material/Close";
 
-interface FormulaModalProps {
+interface AnnualRateFormulaModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-export function FormulaModal({ open, onClose }: FormulaModalProps) {
+export function AnnualRateFormulaModal({ open, onClose }: AnnualRateFormulaModalProps) {
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>

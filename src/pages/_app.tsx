@@ -1,10 +1,10 @@
 import { AppProps } from "next/app";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import "katex/dist/katex.min.css"; // 추가된 부분
+import "katex/dist/katex.min.css";
 
 const theme = createTheme({
-  // 여기에 테마 옵션을 추가할 수 있습니다
+  // 여기에 테마 옵션을 추가
 });
 
 function MyApp({ Component, pageProps }: AppProps) {
