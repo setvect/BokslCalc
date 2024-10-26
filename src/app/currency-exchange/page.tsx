@@ -6,6 +6,7 @@ import { createHandleInputChange, isValidNumber, validateFormData } from "@/util
 import {
   Button,
   Container,
+  Grid,
   InputAdornment,
   Paper,
   Table,
@@ -106,87 +107,125 @@ export default function CompoundInterestCalculator() {
   };
 
   return (
-    <Container maxWidth="md">
-      <Typography variant="h4" gutterBottom align="center" sx={{ my: 4 }}>
-        환전 수수료
+    <Container maxWidth="lg">
+      <Typography variant="h4" gutterBottom align="center" sx={{ my: 4, fontWeight: "bold", color: "#1976d2" }}>
+        환전 수수료 계산기
       </Typography>
-      <div>
-        <TextField
-          label="매매기준율"
-          value={formData.tradeBaseAmount}
-          fullWidth
-          margin="normal"
-          onChange={(e) => handleInputChange("tradeBaseAmount", parseFloat(e.target.value))}
-          error={!!errors.tradeBaseAmount}
-          helperText={errors.tradeBaseAmount}
-          inputProps={{ maxLength: 8 }}
-          autoComplete="off"
-          InputProps={{
-            inputComponent: NumberFormatCustom as any,
-            endAdornment: <InputAdornment position="end">원</InputAdornment>,
-          }}
-        />
-        <TextField
-          label="환전 스프레드"
-          value={formData.exchangeSpread}
-          fullWidth
-          margin="normal"
-          onChange={(e) => handleInputChange("exchangeSpread", parseFloat(e.target.value))}
-          error={!!errors.exchangeSpread}
-          helperText={errors.exchangeSpread}
-          inputProps={{ maxLength: 15 }}
-          autoComplete="off"
-          InputProps={{
-            inputComponent: NumberFormatCustom as any,
-            endAdornment: <InputAdornment position="end">%</InputAdornment>,
-          }}
-        />
-        보통 전신환은 1%, 현찰은 1.75% 스프레드를 가져요.
-        <TextField
-          label="환전금액"
-          value={formData.exchangeAmount}
-          fullWidth
-          margin="normal"
-          onChange={(e) => handleInputChange("exchangeAmount", parseFloat(e.target.value))}
-          error={!!errors.exchangeAmount}
-          helperText={errors.exchangeAmount}
-          inputProps={{ maxLength: 15 }}
-          autoComplete="off"
-          InputProps={{
-            inputComponent: NumberFormatCustom as any,
-            endAdornment: <InputAdornment position="end">원</InputAdornment>,
-          }}
-        />
+      <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="매매기준율"
+              value={formData.tradeBaseAmount}
+              fullWidth
+              onChange={(e) => handleInputChange("tradeBaseAmount", parseFloat(e.target.value))}
+              error={!!errors.tradeBaseAmount}
+              helperText={errors.tradeBaseAmount}
+              inputProps={{ maxLength: 8 }}
+              autoComplete="off"
+              InputProps={{
+                inputComponent: NumberFormatCustom as any,
+                endAdornment: <InputAdornment position="end">원</InputAdornment>,
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="환전 스프레드"
+              value={formData.exchangeSpread}
+              fullWidth
+              onChange={(e) => handleInputChange("exchangeSpread", parseFloat(e.target.value))}
+              error={!!errors.exchangeSpread}
+              helperText={errors.exchangeSpread || "보통 전신환은 1%, 현찰은 1.75% 스프레드를 가져요."}
+              inputProps={{ maxLength: 5 }}
+              autoComplete="off"
+              InputProps={{
+                inputComponent: NumberFormatCustom as any,
+                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="환전금액"
+              value={formData.exchangeAmount}
+              fullWidth
+              onChange={(e) => handleInputChange("exchangeAmount", parseFloat(e.target.value))}
+              error={!!errors.exchangeAmount}
+              helperText={errors.exchangeAmount}
+              inputProps={{ maxLength: 15 }}
+              autoComplete="off"
+              InputProps={{
+                inputComponent: NumberFormatCustom as any,
+                endAdornment: <InputAdornment position="end">원</InputAdornment>,
+              }}
+            />
+          </Grid>
+        </Grid>
         <Button variant="contained" color="primary" onClick={handleCalculate} fullWidth sx={{ mt: 2 }}>
           계산하기
         </Button>
-        <TableContainer component={Paper}>
-          <Table>
+      </Paper>
+
+      {exchangeRateList.length > 0 && (
+        <TableContainer component={Paper} elevation={3} sx={{ backgroundColor: "#1e1e1e" }}>
+          <Table sx={{ minWidth: 650 }}>
             <TableHead>
-              <TableRow>
-                <TableCell align="center">환율 우대</TableCell>
-                <TableCell align="center">수수료</TableCell>
-                <TableCell align="center">환율우대 살때</TableCell>
-                <TableCell align="center">환율우대 팔때</TableCell>
-                <TableCell align="center">수수료율</TableCell>
-                <TableCell align="center">거래비용</TableCell>
+              <TableRow sx={{ backgroundColor: "#333333" }}>
+                <TableCell align="center" sx={{ fontWeight: "bold", color: "#ffffff", borderBottom: "1px solid #444" }}>
+                  환율 우대
+                </TableCell>
+                <TableCell align="center" sx={{ fontWeight: "bold", color: "#ffffff", borderBottom: "1px solid #444" }}>
+                  수수료
+                </TableCell>
+                <TableCell align="center" sx={{ fontWeight: "bold", color: "#ffffff", borderBottom: "1px solid #444" }}>
+                  환율우대 살때
+                </TableCell>
+                <TableCell align="center" sx={{ fontWeight: "bold", color: "#ffffff", borderBottom: "1px solid #444" }}>
+                  환율우대 팔때
+                </TableCell>
+                <TableCell align="center" sx={{ fontWeight: "bold", color: "#ffffff", borderBottom: "1px solid #444" }}>
+                  수수료율
+                </TableCell>
+                <TableCell align="center" sx={{ fontWeight: "bold", color: "#ffffff", borderBottom: "1px solid #444" }}>
+                  거래비용
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {exchangeRateList.map((row, index) => (
-                <TableRow key={index}>
-                  <TableCell align="right">{row.discountRate}%</TableCell>
-                  <TableCell align="right">{formatNumber(row.fee.toFixed(2))}원</TableCell>
-                  <TableCell align="right">{formatNumber(row.buyDiscount.toFixed(2))}원</TableCell>
-                  <TableCell align="right">{formatNumber(row.sellDiscount.toFixed(2))}원</TableCell>
-                  <TableCell align="right">{formatNumber(row.feeRate.toFixed(2))}%</TableCell>
-                  <TableCell align="right">{formatNumber(row.feeAmount.toFixed(0))}원</TableCell>
+                <TableRow
+                  key={index}
+                  sx={{
+                    "&:nth-of-type(odd)": { backgroundColor: "#2a2a2a" },
+                    "&:nth-of-type(even)": { backgroundColor: "#252525" },
+                    "&:hover": { backgroundColor: "#333333" },
+                  }}
+                >
+                  <TableCell align="right" sx={{ color: "#e0e0e0", borderBottom: "1px solid #333" }}>
+                    {row.discountRate}%
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: "#e0e0e0", borderBottom: "1px solid #333" }}>
+                    {formatNumber(row.fee.toFixed(2))}원
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: "#e0e0e0", borderBottom: "1px solid #333" }}>
+                    {formatNumber(row.buyDiscount.toFixed(2))}원
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: "#e0e0e0", borderBottom: "1px solid #333" }}>
+                    {formatNumber(row.sellDiscount.toFixed(2))}원
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: "#e0e0e0", borderBottom: "1px solid #333" }}>
+                    {formatNumber(row.feeRate.toFixed(2))}%
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: "#e0e0e0", borderBottom: "1px solid #333" }}>
+                    {formatNumber(row.feeAmount.toFixed(0))}원
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
-      </div>
+      )}
     </Container>
   );
 }
