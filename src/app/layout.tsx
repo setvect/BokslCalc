@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body>
+      <body style={{ marginBottom: "30px" }}>
         <ThemeWrapper>
           <Link href="/" style={{ textDecoration: "none" }}>
             <Typography variant="h3" component="h1" gutterBottom align="center" sx={{ my: 4, color: "primary.main", cursor: "pointer" }}>

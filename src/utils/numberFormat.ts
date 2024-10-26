@@ -6,7 +6,10 @@ export const formatNumber = (num: string) => {
 };
 
 // 콤마 제거 함수
-export const removeCommas = (num: string | number): string => {
+export const removeCommas = (num: string | number | null | undefined): string => {
+  if (num === null || num === undefined) {
+    return "";
+  }
   if (typeof num === "number") {
     return num.toString();
   }
@@ -14,10 +17,7 @@ export const removeCommas = (num: string | number): string => {
 };
 
 // 입력 처리 함수
-export const handleNumberInput = (
-  value: string,
-  setter: React.Dispatch<React.SetStateAction<string>>
-) => {
+export const handleNumberInput = (value: string, setter: React.Dispatch<React.SetStateAction<string>>) => {
   const numericValue = removeCommas(value).replace(/[^0-9.]/g, "");
   setter(formatNumber(numericValue));
 };

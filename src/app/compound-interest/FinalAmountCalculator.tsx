@@ -10,11 +10,12 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { ko } from "date-fns/locale";
 import moment from "moment";
 import { FinalAmountFormulaModal } from "./FinalAmountFormulaModal";
+import { NumericFormat } from "react-number-format";
 
 interface FormData {
-  initialAmount: string;
-  years: string;
-  interestRate: string;
+  initialAmount: number | null;
+  years: number | null;
+  interestRate: number | null;
   startDate: Date | null;
   endDate: Date | null;
 }
@@ -27,12 +28,38 @@ interface FormErrors {
   endDate: string | null;
 }
 
+interface NumberFormatCustomProps {
+  onChange: (event: { target: { name: string; value: string } }) => void;
+  name: string;
+}
+
+const NumberFormatCustom = React.forwardRef<HTMLInputElement, NumberFormatCustomProps>(function NumberFormatCustom(props, ref) {
+  const { onChange, ...other } = props;
+
+  return (
+    <NumericFormat
+      {...other}
+      getInputRef={ref}
+      onValueChange={(values) => {
+        onChange({
+          target: {
+            name: props.name,
+            value: values.value,
+          },
+        });
+      }}
+      thousandSeparator
+      valueIsNumericString
+    />
+  );
+});
+
 export default function FinalAmountCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
   const [formData, setFormData] = useState<FormData>({
-    initialAmount: "",
-    years: "",
-    interestRate: "",
+    initialAmount: null,
+    years: null,
+    interestRate: null,
     startDate: null,
     endDate: null,
   });
@@ -70,18 +97,10 @@ export default function FinalAmountCalculator() {
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | Date | null) => {
-    if (typeof value === "string") {
-      if (field === "initialAmount") {
-        const numericValue = removeCommas(value).replace(/[^0-9.]/g, "");
-        value = formatNumber(numericValue);
-      } else if (field === "interestRate" || field === "years") {
-        value = value.replace(/[^0-9.]/g, "");
-      }
-    }
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof FormData, value: number | Date | null) => {
+    setFormData((prev: FormData) => ({ ...prev, [field]: value }));
     if (shouldValidateField(field)) {
-      setErrors((prev) => ({
+      setErrors((prev: FormErrors) => ({
         ...prev,
         [field]: isValidInput(field, value) ? null : "유효하지 않은 입력입니다.",
       }));
@@ -103,13 +122,13 @@ export default function FinalAmountCalculator() {
 
   const handleInitialAmountChange = (value: string) => {
     const formattedValue = formatNumber(removeCommas(value));
-    handleInputChange("initialAmount", formattedValue);
+    handleInputChange("initialAmount", parseFloat(formattedValue) || null);
   };
 
   const calculateFinalAmount = () => {
     let period: number;
-    if (inputType === "years") {
-      period = parseFloat(formData.years);
+    if (inputType === "years" && formData.years !== null) {
+      period = formData.years;
     } else if (formData.startDate && formData.endDate) {
       const diffDays = moment(formData.endDate).diff(moment(formData.startDate), "days");
       period = diffDays / 365;
@@ -117,8 +136,14 @@ export default function FinalAmountCalculator() {
       setResult("날짜를 선택해주세요.");
       return;
     }
-    const initial = parseFloat(removeCommas(formData.initialAmount));
-    const rate = parseFloat(formData.interestRate) / 100;
+
+    if (formData.initialAmount === null || formData.interestRate === null) {
+      setResult("초기 금액과 이자율을 입력해주세요.");
+      return;
+    }
+
+    const initial = formData.initialAmount;
+    const rate = formData.interestRate / 100;
     const final = initial * Math.pow(1 + rate, period);
     setResult(`최종 금액: ${formatNumber(final.toFixed(2))}원`);
   };
@@ -207,38 +232,42 @@ export default function FinalAmountCalculator() {
 
       <TextField
         label="초기 금액"
-        value={formData.initialAmount}
-        onChange={(e) => handleInitialAmountChange(e.target.value)}
+        value={formData.initialAmount ?? ""}
+        onChange={(e) => handleInputChange("initialAmount", parseFloat(e.target.value) || null)}
         fullWidth
         margin="normal"
         error={!!errors.initialAmount}
         helperText={errors.initialAmount}
-        inputProps={{ maxLength: 15 }}
         InputProps={{
+          inputComponent: NumberFormatCustom as any,
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
-        autoComplete="off"
+        inputProps={{ maxLength: 15 }}
       />
 
       <TextField
         label="연복리 수익률(%)"
-        value={formData.interestRate}
-        onChange={(e) => handleInputChange("interestRate", e.target.value)}
+        value={formData.interestRate ?? ""}
+        onChange={(e) => handleInputChange("interestRate", parseFloat(e.target.value) || null)}
         fullWidth
         margin="normal"
         error={!!errors.interestRate}
         helperText={errors.interestRate}
-        inputProps={{ maxLength: 5 }}
         InputProps={{
+          inputComponent: NumberFormatCustom as any,
           endAdornment: <InputAdornment position="end">%</InputAdornment>,
+        }}
+        inputProps={{
+          decimalScale: 2,
+          allowNegative: false,
         }}
         autoComplete="off"
       />
       {inputType === "years" ? (
         <FormControl fullWidth margin="normal">
           <Select
-            value={formData.years}
-            onChange={(e) => handleInputChange("years", e.target.value)}
+            value={formData.years ?? ""}
+            onChange={(e) => handleInputChange("years", Number(e.target.value) || null)}
             displayEmpty
             error={!!errors.years}
             inputProps={{ autoComplete: "off" }}
