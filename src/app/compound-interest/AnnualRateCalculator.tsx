@@ -162,12 +162,13 @@ export default function AnnualRateCalculator() {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3 }}>
+    <Paper elevation={3} sx={{ p: 3, bgcolor: "background.default", borderRadius: 2 }}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          marginBottom: 16,
         }}
       >
         <Typography variant="h6" gutterBottom>
@@ -178,7 +179,7 @@ export default function AnnualRateCalculator() {
         </Button>
       </div>
       <AnnualRateFormulaModal open={open} onClose={handleClose} />
-      <FormControl component="fieldset">
+      <FormControl component="fieldset" sx={{ mb: 2 }}>
         <FormLabel component="legend">기간 입력 방식</FormLabel>
         <RadioGroup row value={inputType} onChange={(e) => setInputType(e.target.value as "years" | "dates")}>
           <FormControlLabel value="years" control={<Radio />} label="년수" />
@@ -198,6 +199,7 @@ export default function AnnualRateCalculator() {
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
         inputProps={{ maxLength: 15 }}
+        sx={{ mb: 2 }}
       />
       <TextField
         label="최종 금액"
@@ -212,9 +214,10 @@ export default function AnnualRateCalculator() {
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
         inputProps={{ maxLength: 15 }}
+        sx={{ mb: 2 }}
       />
       {inputType === "years" ? (
-        <FormControl fullWidth margin="normal" error={!!errors.years}>
+        <FormControl fullWidth margin="normal" error={!!errors.years} sx={{ mb: 2 }}>
           <Select value={formData.years ?? ""} onChange={(e) => handleInputChange("years", Number(e.target.value))} displayEmpty>
             <MenuItem value="" disabled>
               기간 (년)
@@ -229,7 +232,7 @@ export default function AnnualRateCalculator() {
         </FormControl>
       ) : (
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
             <DatePicker
               label="시작 날짜"
               value={formData.startDate}
@@ -269,13 +272,21 @@ export default function AnnualRateCalculator() {
           </div>
         </LocalizationProvider>
       )}
-      <Button onClick={handleCalculate} variant="contained" color="primary" style={{ width: "100%", marginTop: 16 }}>
+      <Button onClick={handleCalculate} variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
         계산하기
       </Button>
       {result && (
         <Paper
           elevation={2}
-          sx={{ mt: 2, p: 2, bgcolor: "primary.light", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+          sx={{
+            mt: 2,
+            p: 2,
+            bgcolor: "primary.light",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderRadius: 1,
+          }}
         >
           <Typography variant="h6" sx={{ color: "primary.contrastText", fontWeight: "bold" }}>
             {result}
