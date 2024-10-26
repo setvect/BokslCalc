@@ -1,9 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, InputAdornment, Button } from "@mui/material";
-import { Typography, Grid, Container } from "@mui/material";
-import { formatNumber, removeCommas } from "@/utils/numberFormat";
+import NumberFormatCustom from "@/components/NumberFormatCustom";
+import { formatNumber } from "@/utils/numberFormat";
+import { createHandleInputChange, isValidNumber, validateFormData } from "@/utils/validation";
+import {
+  Button,
+  Container,
+  InputAdornment,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
 
 type ExchangeRate = {
   discountRate: number; // 환율 우대(%)
@@ -15,24 +29,62 @@ type ExchangeRate = {
 };
 
 type FormData = {
-  tradeBaseAmount: string;
-  exchangeSpread: string;
-  exchangeAmount: string;
+  tradeBaseAmount: number | null;
+  exchangeSpread: number | null;
+  exchangeAmount: number | null;
+};
+
+type FormErrors = {
+  tradeBaseAmount: string | null;
+  exchangeSpread: string | null;
+  exchangeAmount: string | null;
 };
 
 export default function CompoundInterestCalculator() {
   const [exchangeRateList, setExchangeRateList] = useState<ExchangeRate[]>([]);
   const [formData, setFormData] = useState<FormData>({
-    tradeBaseAmount: "1300",
-    exchangeSpread: "1",
-    exchangeAmount: "10,000,000",
+    tradeBaseAmount: null,
+    exchangeSpread: null,
+    exchangeAmount: null,
+  });
+  const [errors, setErrors] = useState<FormErrors>({
+    tradeBaseAmount: null,
+    exchangeSpread: null,
+    exchangeAmount: null,
   });
 
+  const isValidInput = (field: string, value: any): boolean => {
+    switch (field) {
+      case "tradeBaseAmount":
+      case "exchangeSpread":
+      case "exchangeAmount":
+        return isValidNumber(value);
+      default:
+        return true;
+    }
+  };
+
+  const shouldValidateField = (field: string): boolean => {
+    return true;
+  };
+
+  const handleInputChange = createHandleInputChange<FormData, FormErrors>(setFormData, setErrors, shouldValidateField, isValidInput);
   const handleCalculate = () => {
+    const { errors: newErrors, hasError } = validateFormData(formData, shouldValidateField, isValidInput);
+    setErrors(newErrors as FormErrors);
+    if (!hasError) {
+      calculateExchangeRate();
+    }
+  };
+
+  const calculateExchangeRate = () => {
     const rateList: ExchangeRate[] = [];
-    const tradeBaseAmount = parseFloat(removeCommas(formData.tradeBaseAmount));
-    const exchangeSpread = parseFloat(removeCommas(formData.exchangeSpread));
-    const exchangeAmount = parseFloat(removeCommas(formData.exchangeAmount));
+    const tradeBaseAmount = formData.tradeBaseAmount;
+    const exchangeSpread = formData.exchangeSpread;
+    const exchangeAmount = formData.exchangeAmount;
+    if (tradeBaseAmount === null || exchangeSpread === null || exchangeAmount === null) {
+      return;
+    }
 
     for (let discount = 0; discount <= 100; discount += 5) {
       const fee = tradeBaseAmount * (exchangeSpread / 100) * (1 - discount / 100);
@@ -53,21 +105,6 @@ export default function CompoundInterestCalculator() {
     setExchangeRateList(rateList);
   };
 
-  const handleTradeBaseAmount = (value: string) => {
-    const formattedValue = formatNumber(removeCommas(value));
-    setFormData({ ...formData, tradeBaseAmount: formattedValue });
-  };
-
-  const handleExchangeSpread = (value: string) => {
-    const formattedValue = formatNumber(removeCommas(value));
-    setFormData({ ...formData, exchangeSpread: formattedValue });
-  };
-
-  const handleExchangeAmount = (value: string) => {
-    const formattedValue = formatNumber(removeCommas(value));
-    setFormData({ ...formData, exchangeAmount: formattedValue });
-  };
-
   return (
     <Container maxWidth="md">
       <Typography variant="h4" gutterBottom align="center" sx={{ my: 4 }}>
@@ -79,10 +116,13 @@ export default function CompoundInterestCalculator() {
           value={formData.tradeBaseAmount}
           fullWidth
           margin="normal"
-          onChange={(e) => handleTradeBaseAmount(e.target.value)}
+          onChange={(e) => handleInputChange("tradeBaseAmount", parseFloat(e.target.value))}
+          error={!!errors.tradeBaseAmount}
+          helperText={errors.tradeBaseAmount}
           inputProps={{ maxLength: 8 }}
           autoComplete="off"
           InputProps={{
+            inputComponent: NumberFormatCustom as any,
             endAdornment: <InputAdornment position="end">원</InputAdornment>,
           }}
         />
@@ -91,23 +131,29 @@ export default function CompoundInterestCalculator() {
           value={formData.exchangeSpread}
           fullWidth
           margin="normal"
-          onChange={(e) => handleExchangeSpread(e.target.value)}
+          onChange={(e) => handleInputChange("exchangeSpread", parseFloat(e.target.value))}
+          error={!!errors.exchangeSpread}
+          helperText={errors.exchangeSpread}
           inputProps={{ maxLength: 15 }}
           autoComplete="off"
           InputProps={{
+            inputComponent: NumberFormatCustom as any,
             endAdornment: <InputAdornment position="end">%</InputAdornment>,
           }}
         />
-        일반적으로 환전 스프레드는 전신환 1%, 현찰 1.75%
+        보통 전신환은 1%, 현찰은 1.75% 스프레드를 가져요.
         <TextField
           label="환전금액"
           value={formData.exchangeAmount}
           fullWidth
           margin="normal"
-          onChange={(e) => handleExchangeAmount(e.target.value)}
+          onChange={(e) => handleInputChange("exchangeAmount", parseFloat(e.target.value))}
+          error={!!errors.exchangeAmount}
+          helperText={errors.exchangeAmount}
           inputProps={{ maxLength: 15 }}
           autoComplete="off"
           InputProps={{
+            inputComponent: NumberFormatCustom as any,
             endAdornment: <InputAdornment position="end">원</InputAdornment>,
           }}
         />
