@@ -6,27 +6,27 @@ const calculators = [
   {
     name: "복리계산기",
     path: "/compound-interest",
-    description: "투자 수익을 복리로 계산합니다.",
+    description: "투자 수익을 복리로 계산해요",
   },
   {
-    name: "대출계산기",
-    path: "/loan",
-    description: "대출 상환 계획을 계산합니다.",
+    name: "환전 수수료",
+    path: "/currency-exchange",
+    description: "수수료우대율에 따른 환전 수수료를 계산해요",
   },
   {
     name: "전월세 전환율",
     path: "/rent-conversion",
-    description: "전세와 월세 간의 전환율을 계산합니다.",
+    description: "전세와 월세 간의 전환율을 계산해요.",
   },
   {
-    name: "환전",
-    path: "/currency-exchange",
-    description: "다양한 통화 간의 환율을 계산합니다.",
+    name: "대출계산기",
+    path: "/loan",
+    description: "대출 상환 계획을 계산해요.",
   },
   {
-    name: "실수령액",
+    name: "월급 실수령액",
     path: "/net-income",
-    description: "세금과 공제 후의 실제 수령액을 계산합니다.",
+    description: "세금과 공제 후의 실제 수령액을 확인해요.",
   },
 ];
 
@@ -52,12 +52,7 @@ export default function Home() {
                 },
               }}
             >
-              <Typography
-                variant="h5"
-                component="h2"
-                gutterBottom
-                color="primary"
-              >
+              <Typography variant="h5" component="h2" gutterBottom color="primary">
                 {calc.name}
               </Typography>
               <Typography variant="body2" color="text.secondary">
