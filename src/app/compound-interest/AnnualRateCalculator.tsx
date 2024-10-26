@@ -21,32 +21,59 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { ko } from "date-fns/locale";
 import "katex/dist/katex.min.css";
 import moment from "moment";
-import { useState } from "react";
+import React, { useState } from "react";
 import { AnnualRateFormulaModal } from "./AnnualRateFormulaModal";
 import { ChartModal } from "./ChartModal";
+import { NumericFormat } from "react-number-format";
 
-interface FormData {
-  initialAmount: string;
-  finalAmount: string;
-  years: string;
+type FormData = {
+  initialAmount: number | null;
+  finalAmount: number | null;
+  years: number | null;
   startDate: Date | null;
   endDate: Date | null;
-}
+};
 
-interface FormErrors {
+type FormErrors = {
   initialAmount: string | null;
   finalAmount: string | null;
   years: string | null;
   startDate: string | null;
   endDate: string | null;
+};
+
+interface NumberFormatCustomProps {
+  onChange: (event: { target: { name: string; value: string } }) => void;
+  name: string;
 }
+
+const NumberFormatCustom = React.forwardRef<HTMLInputElement, NumberFormatCustomProps>(function NumberFormatCustom(props, ref) {
+  const { onChange, ...other } = props;
+
+  return (
+    <NumericFormat
+      {...other}
+      getInputRef={ref}
+      onValueChange={(values) => {
+        onChange({
+          target: {
+            name: props.name,
+            value: values.value,
+          },
+        });
+      }}
+      thousandSeparator
+      valueIsNumericString
+    />
+  );
+});
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
   const [formData, setFormData] = useState<FormData>({
-    initialAmount: "",
-    finalAmount: "",
-    years: "",
+    initialAmount: null,
+    finalAmount: null,
+    years: null,
     startDate: null,
     endDate: null,
   });
@@ -75,18 +102,18 @@ export default function AnnualRateCalculator() {
     switch (field) {
       case "initialAmount":
       case "finalAmount":
-        return isValidNumber(value);
+        return value === null || (typeof value === "number" && isFinite(value));
       case "years":
-        return inputType === "years" && isValidNumber(value) && parseInt(value) > 0;
+        return inputType === "years" && (value === null || (typeof value === "number" && value > 0));
       case "startDate":
       case "endDate":
-        return inputType === "dates" && isValidDate(value);
+        return inputType === "dates" && (value === null || isValidDate(value));
       default:
         return true;
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | Date | null) => {
+  const handleInputChange = (field: keyof FormData, value: number | Date | null) => {
     setFormData((prev: FormData) => ({ ...prev, [field]: value }));
     if (shouldValidateField(field)) {
       setErrors((prev: FormErrors) => ({
@@ -109,20 +136,10 @@ export default function AnnualRateCalculator() {
     return false;
   };
 
-  const handleInitialAmountChange = (value: string) => {
-    const formattedValue = formatNumber(removeCommas(value));
-    handleInputChange("initialAmount", formattedValue);
-  };
-
-  const handleFinalAmountChange = (value: string) => {
-    const formattedValue = formatNumber(removeCommas(value));
-    handleInputChange("finalAmount", formattedValue);
-  };
-
   const calculateAnnualRate = () => {
     let period: number;
     if (inputType === "years") {
-      period = parseFloat(formData.years);
+      period = formData.years ?? 0;
     } else if (formData.startDate && formData.endDate) {
       const diffDays = moment(formData.endDate).diff(moment(formData.startDate), "days");
       period = diffDays / 365;
@@ -130,8 +147,15 @@ export default function AnnualRateCalculator() {
       setResult("날짜를 선택해주세요.");
       return;
     }
-    const initial = parseFloat(removeCommas(formData.initialAmount));
-    const final = parseFloat(removeCommas(formData.finalAmount));
+
+    const initial = formData.initialAmount ?? 0;
+    const final = formData.finalAmount ?? 0;
+
+    if (initial === 0 || final === 0 || period === 0) {
+      setResult("유효한 값을 입력해주세요.");
+      return;
+    }
+
     const rate = (Math.pow(final / initial, 1 / period) - 1) * 100;
     setResult(`연복리 수익률(CAGR): ${rate.toFixed(2)}%`);
 
@@ -235,13 +259,13 @@ export default function AnnualRateCalculator() {
       <TextField
         label="초기 금액"
         value={formData.initialAmount}
-        onChange={(e) => handleInitialAmountChange(e.target.value)}
+        onChange={(e) => handleInputChange("initialAmount", parseFloat(e.target.value))}
         error={!!errors.initialAmount}
         helperText={errors.initialAmount}
         fullWidth
         margin="normal"
-        autoComplete="off"
         InputProps={{
+          inputComponent: NumberFormatCustom as any,
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
         inputProps={{ maxLength: 15 }}
@@ -249,20 +273,25 @@ export default function AnnualRateCalculator() {
       <TextField
         label="최종 금액"
         value={formData.finalAmount}
-        onChange={(e) => handleFinalAmountChange(e.target.value)}
+        onChange={(e) => handleInputChange("finalAmount", parseFloat(e.target.value))}
         error={!!errors.finalAmount}
         helperText={errors.finalAmount}
         fullWidth
         margin="normal"
-        autoComplete="off"
         InputProps={{
+          inputComponent: NumberFormatCustom as any,
           endAdornment: <InputAdornment position="end">원</InputAdornment>,
         }}
         inputProps={{ maxLength: 15 }}
       />
       {inputType === "years" ? (
         <FormControl fullWidth margin="normal">
-          <Select value={formData.years} onChange={(e) => handleInputChange("years", e.target.value)} displayEmpty error={!!errors.years}>
+          <Select
+            value={formData.years ?? ""}
+            onChange={(e) => handleInputChange("years", Number(e.target.value))}
+            displayEmpty
+            error={!!errors.years}
+          >
             <MenuItem value="" disabled>
               기간 (년)
             </MenuItem>
