@@ -6,7 +6,7 @@ import FinalAmountCalculator from "./FinalAmountCalculator";
 export default function CompoundInterestCalculator() {
   return (
     <Container maxWidth="md">
-      <Typography variant="h4" gutterBottom align="center" sx={{ my: 4 }}>
+      <Typography variant="h4" gutterBottom align="center" sx={{ my: 4, fontWeight: "bold", color: "#1976d2" }}>
         복리 계산기
       </Typography>
       <Grid container direction="column" spacing={3}>
