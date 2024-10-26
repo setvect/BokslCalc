@@ -1,10 +1,12 @@
 "use client";
 
-import { removeCommas } from "@/utils/numberFormat";
+import NumberFormatCustom from "@/components/NumberFormatCustom";
+import { createHandleInputChange, createValidateDates, isValidDate, isValidNumber, validateFormData } from "@/utils/validation";
 import {
   Button,
   FormControl,
   FormControlLabel,
+  FormHelperText,
   FormLabel,
   InputAdornment,
   MenuItem,
@@ -14,7 +16,6 @@ import {
   Select,
   TextField,
   Typography,
-  FormHelperText,
 } from "@mui/material";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -22,10 +23,9 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { ko } from "date-fns/locale";
 import "katex/dist/katex.min.css";
 import moment from "moment";
-import React, { useState } from "react";
+import { useState } from "react";
 import { AnnualRateFormulaModal } from "./AnnualRateFormulaModal";
 import { ChartModal } from "./ChartModal";
-import { NumericFormat } from "react-number-format";
 
 type FormData = {
   initialAmount: number | null;
@@ -42,32 +42,6 @@ type FormErrors = {
   startDate: string | null;
   endDate: string | null;
 };
-
-interface NumberFormatCustomProps {
-  onChange: (event: { target: { name: string; value: string } }) => void;
-  name: string;
-}
-
-const NumberFormatCustom = React.forwardRef<HTMLInputElement, NumberFormatCustomProps>(function NumberFormatCustom(props, ref) {
-  const { onChange, ...other } = props;
-
-  return (
-    <NumericFormat
-      {...other}
-      getInputRef={ref}
-      onValueChange={(values) => {
-        onChange({
-          target: {
-            name: props.name,
-            value: values.value,
-          },
-        });
-      }}
-      thousandSeparator
-      valueIsNumericString
-    />
-  );
-});
 
 export default function AnnualRateCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
@@ -90,15 +64,6 @@ export default function AnnualRateCalculator() {
   const [showChart, setShowChart] = useState(false);
   const [chartData, setChartData] = useState<{ year: number; amount: number }[]>([]);
 
-  const isValidNumber = (value: string) => {
-    const numericValue = parseFloat(removeCommas(value));
-    return !isNaN(numericValue) && isFinite(numericValue);
-  };
-
-  const isValidDate = (date: Date | null) => {
-    return date instanceof Date && !isNaN(date.getTime());
-  };
-
   const isValidInput = (field: string, value: any): boolean => {
     switch (field) {
       case "initialAmount":
@@ -114,16 +79,6 @@ export default function AnnualRateCalculator() {
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: number | Date | null) => {
-    setFormData((prev: FormData) => ({ ...prev, [field]: value }));
-    if (shouldValidateField(field)) {
-      setErrors((prev: FormErrors) => ({
-        ...prev,
-        [field]: isValidInput(field, value) ? null : "유효하지 않은 입력입니다.",
-      }));
-    }
-  };
-
   const shouldValidateField = (field: string): boolean => {
     if (field === "initialAmount" || field === "finalAmount") {
       return true;
@@ -136,6 +91,8 @@ export default function AnnualRateCalculator() {
     }
     return false;
   };
+
+  const handleInputChange = createHandleInputChange<FormData, FormErrors>(setFormData, setErrors, shouldValidateField, isValidInput);
 
   const calculateAnnualRate = () => {
     let period: number;
@@ -168,23 +125,9 @@ export default function AnnualRateCalculator() {
   };
 
   const handleCalculate = () => {
-    let hasError = false;
-    const newErrors: FormErrors = { ...errors };
+    const { errors: newErrors, hasError } = validateFormData(formData, shouldValidateField, isValidInput);
 
-    Object.entries(formData).forEach(([field, value]) => {
-      if (shouldValidateField(field)) {
-        if (!isValidInput(field, value)) {
-          newErrors[field as keyof FormErrors] = "유효하지 않은 입력입니다.";
-          hasError = true;
-        } else {
-          newErrors[field as keyof FormErrors] = null;
-        }
-      } else {
-        newErrors[field as keyof FormErrors] = null;
-      }
-    });
-
-    setErrors(newErrors);
+    setErrors(newErrors as FormErrors);
     if (!hasError) {
       calculateAnnualRate();
     }
@@ -200,21 +143,7 @@ export default function AnnualRateCalculator() {
     validateDates(formData.startDate, newValue);
   };
 
-  const validateDates = (startDate: Date | null, endDate: Date | null) => {
-    if (startDate && endDate && startDate > endDate) {
-      setErrors((prev) => ({
-        ...prev,
-        startDate: "시작 날짜는 종료 날짜보다 늦을 수 없습니다.",
-        endDate: "종료 날짜는 시작 날짜보다 빠를 수 없습니다.",
-      }));
-    } else {
-      setErrors((prev) => ({
-        ...prev,
-        startDate: null,
-        endDate: null,
-      }));
-    }
-  };
+  const validateDates = createValidateDates<FormErrors>(setErrors, "startDate", "endDate");
 
   const handleClickOpenFormula = () => {
     setOpenFormula(true);

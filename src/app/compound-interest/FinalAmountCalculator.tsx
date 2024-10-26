@@ -1,16 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
-import { TextField, Button, Typography, Paper, InputAdornment, FormHelperText } from "@mui/material";
-import { formatNumber, removeCommas } from "@/utils/numberFormat";
-import { Select, MenuItem, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
+import NumberFormatCustom from "@/components/NumberFormatCustom";
+import { formatNumber } from "@/utils/numberFormat";
+import { createHandleInputChange, createValidateDates, isValidDate, isValidNumber, validateFormData } from "@/utils/validation";
+import {
+  Button,
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
+  FormLabel,
+  InputAdornment,
+  MenuItem,
+  Paper,
+  Radio,
+  RadioGroup,
+  Select,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { ko } from "date-fns/locale";
 import moment from "moment";
+import { useState } from "react";
 import { FinalAmountFormulaModal } from "./FinalAmountFormulaModal";
-import { NumericFormat } from "react-number-format";
 
 type FormData = {
   initialAmount: number | null;
@@ -27,32 +41,6 @@ type FormErrors = {
   startDate: string | null;
   endDate: string | null;
 };
-
-interface NumberFormatCustomProps {
-  onChange: (event: { target: { name: string; value: string } }) => void;
-  name: string;
-}
-
-const NumberFormatCustom = React.forwardRef<HTMLInputElement, NumberFormatCustomProps>(function NumberFormatCustom(props, ref) {
-  const { onChange, ...other } = props;
-
-  return (
-    <NumericFormat
-      {...other}
-      getInputRef={ref}
-      onValueChange={(values) => {
-        onChange({
-          target: {
-            name: props.name,
-            value: values.value,
-          },
-        });
-      }}
-      thousandSeparator
-      valueIsNumericString
-    />
-  );
-});
 
 export default function FinalAmountCalculator() {
   const [inputType, setInputType] = useState<"years" | "dates">("years");
@@ -73,15 +61,6 @@ export default function FinalAmountCalculator() {
   const [result, setResult] = useState("");
   const [openFormula, setOpenFormula] = useState(false);
 
-  const isValidNumber = (value: string) => {
-    const numericValue = parseFloat(removeCommas(value));
-    return !isNaN(numericValue) && isFinite(numericValue);
-  };
-
-  const isValidDate = (date: Date | null) => {
-    return date instanceof Date && !isNaN(date.getTime());
-  };
-
   const isValidInput = (field: string, value: any): boolean => {
     switch (field) {
       case "initialAmount":
@@ -97,16 +76,6 @@ export default function FinalAmountCalculator() {
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: number | Date | null) => {
-    setFormData((prev: FormData) => ({ ...prev, [field]: value }));
-    if (shouldValidateField(field)) {
-      setErrors((prev: FormErrors) => ({
-        ...prev,
-        [field]: isValidInput(field, value) ? null : "유효하지 않은 입력입니다.",
-      }));
-    }
-  };
-
   const shouldValidateField = (field: string): boolean => {
     if (field === "initialAmount" || field === "interestRate") {
       return true;
@@ -119,6 +88,8 @@ export default function FinalAmountCalculator() {
     }
     return false;
   };
+
+  const handleInputChange = createHandleInputChange<FormData, FormErrors>(setFormData, setErrors, shouldValidateField, isValidInput);
 
   const calculateFinalAmount = () => {
     let period: number;
@@ -144,23 +115,9 @@ export default function FinalAmountCalculator() {
   };
 
   const handleCalculate = () => {
-    let hasError = false;
-    const newErrors: FormErrors = { ...errors };
+    const { errors: newErrors, hasError } = validateFormData(formData, shouldValidateField, isValidInput);
 
-    Object.entries(formData).forEach(([field, value]) => {
-      if (shouldValidateField(field)) {
-        if (!isValidInput(field, value)) {
-          newErrors[field as keyof FormErrors] = "유효하지 않은 입력입니다.";
-          hasError = true;
-        } else {
-          newErrors[field as keyof FormErrors] = null;
-        }
-      } else {
-        newErrors[field as keyof FormErrors] = null;
-      }
-    });
-
-    setErrors(newErrors);
+    setErrors(newErrors as FormErrors);
     if (!hasError) {
       calculateFinalAmount();
     }
@@ -176,21 +133,7 @@ export default function FinalAmountCalculator() {
     validateDates(formData.startDate, newValue);
   };
 
-  const validateDates = (startDate: Date | null, endDate: Date | null) => {
-    if (startDate && endDate && startDate > endDate) {
-      setErrors((prev) => ({
-        ...prev,
-        startDate: "시작 날짜는 종료 날짜보다 늦을 수 없습니다.",
-        endDate: "종료 날짜는 시작 날짜보다 빠를 수 없습니다.",
-      }));
-    } else {
-      setErrors((prev) => ({
-        ...prev,
-        startDate: null,
-        endDate: null,
-      }));
-    }
-  };
+  const validateDates = createValidateDates<FormErrors>(setErrors, "startDate", "endDate");
 
   const handleClickOpenFormula = () => {
     setOpenFormula(true);
@@ -317,9 +260,16 @@ export default function FinalAmountCalculator() {
       <Button variant="contained" color="primary" onClick={handleCalculate} fullWidth sx={{ mt: 2 }}>
         계산하기
       </Button>
-      <Typography variant="h6" sx={{ mt: 2 }}>
-        {result}
-      </Typography>
+      {result && (
+        <Paper
+          elevation={2}
+          sx={{ mt: 2, p: 2, bgcolor: "primary.light", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+        >
+          <Typography variant="h6" sx={{ color: "primary.contrastText", fontWeight: "bold" }}>
+            {result}
+          </Typography>
+        </Paper>
+      )}
     </Paper>
   );
 }
