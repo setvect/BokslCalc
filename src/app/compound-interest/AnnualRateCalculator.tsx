@@ -14,6 +14,7 @@ import {
   Select,
   TextField,
   Typography,
+  FormHelperText,
 } from "@mui/material";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -284,13 +285,8 @@ export default function AnnualRateCalculator() {
         inputProps={{ maxLength: 15 }}
       />
       {inputType === "years" ? (
-        <FormControl fullWidth margin="normal">
-          <Select
-            value={formData.years ?? ""}
-            onChange={(e) => handleInputChange("years", Number(e.target.value))}
-            displayEmpty
-            error={!!errors.years}
-          >
+        <FormControl fullWidth margin="normal" error={!!errors.years}>
+          <Select value={formData.years ?? ""} onChange={(e) => handleInputChange("years", Number(e.target.value))} displayEmpty>
             <MenuItem value="" disabled>
               기간 (년)
             </MenuItem>
@@ -300,11 +296,7 @@ export default function AnnualRateCalculator() {
               </MenuItem>
             ))}
           </Select>
-          {errors.years && (
-            <Typography color="error" variant="caption">
-              {errors.years}
-            </Typography>
-          )}
+          {errors.years && <FormHelperText>{errors.years}</FormHelperText>}
         </FormControl>
       ) : (
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>

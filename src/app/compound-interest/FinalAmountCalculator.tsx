@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { TextField, Button, Typography, Paper, InputAdornment } from "@mui/material";
+import { TextField, Button, Typography, Paper, InputAdornment, FormHelperText } from "@mui/material";
 import { formatNumber, removeCommas } from "@/utils/numberFormat";
 import { Select, MenuItem, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from "@mui/material";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -259,14 +259,8 @@ export default function FinalAmountCalculator() {
         autoComplete="off"
       />
       {inputType === "years" ? (
-        <FormControl fullWidth margin="normal">
-          <Select
-            value={formData.years ?? ""}
-            onChange={(e) => handleInputChange("years", Number(e.target.value) || null)}
-            displayEmpty
-            error={!!errors.years}
-            inputProps={{ autoComplete: "off" }}
-          >
+        <FormControl fullWidth margin="normal" error={!!errors.years}>
+          <Select value={formData.years ?? ""} onChange={(e) => handleInputChange("years", Number(e.target.value))} displayEmpty>
             <MenuItem value="" disabled>
               기간 (년)
             </MenuItem>
@@ -276,11 +270,7 @@ export default function FinalAmountCalculator() {
               </MenuItem>
             ))}
           </Select>
-          {errors.years && (
-            <Typography color="error" variant="caption">
-              {errors.years}
-            </Typography>
-          )}
+          {errors.years && <FormHelperText>{errors.years}</FormHelperText>}
         </FormControl>
       ) : (
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>

@@ -1,19 +1,10 @@
 "use client";
 
-import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider } from "@mui/material/styles";
+import darkTheme from "../../theme/darkTheme";
 
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-  },
-});
-
-export default function ThemeWrapper({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ThemeWrapper({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
