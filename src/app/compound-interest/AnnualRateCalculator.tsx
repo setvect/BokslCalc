@@ -1,6 +1,6 @@
 "use client";
 
-import { formatNumber, removeCommas } from "@/utils/numberFormat";
+import { removeCommas } from "@/utils/numberFormat";
 import {
   Button,
   FormControl,
@@ -102,12 +102,12 @@ export default function AnnualRateCalculator() {
     switch (field) {
       case "initialAmount":
       case "finalAmount":
-        return value === null || (typeof value === "number" && isFinite(value));
+        return isValidNumber(value);
       case "years":
-        return inputType === "years" && (value === null || (typeof value === "number" && value > 0));
+        return inputType === "years" && isValidNumber(value) && parseInt(value) > 0;
       case "startDate":
       case "endDate":
-        return inputType === "dates" && (value === null || isValidDate(value));
+        return inputType === "dates" && isValidDate(value);
       default:
         return true;
     }
@@ -138,8 +138,8 @@ export default function AnnualRateCalculator() {
 
   const calculateAnnualRate = () => {
     let period: number;
-    if (inputType === "years") {
-      period = formData.years ?? 0;
+    if (inputType === "years" && formData.years !== null) {
+      period = formData.years;
     } else if (formData.startDate && formData.endDate) {
       const diffDays = moment(formData.endDate).diff(moment(formData.startDate), "days");
       period = diffDays / 365;
@@ -148,14 +148,13 @@ export default function AnnualRateCalculator() {
       return;
     }
 
-    const initial = formData.initialAmount ?? 0;
-    const final = formData.finalAmount ?? 0;
-
-    if (initial === 0 || final === 0 || period === 0) {
-      setResult("유효한 값을 입력해주세요.");
+    if (formData.initialAmount === null || formData.finalAmount === null) {
+      setResult("초기금액과 최종금액을 입력해주세요.");
       return;
     }
 
+    const initial = formData.initialAmount;
+    const final = formData.finalAmount;
     const rate = (Math.pow(final / initial, 1 / period) - 1) * 100;
     setResult(`연복리 수익률(CAGR): ${rate.toFixed(2)}%`);
 
@@ -301,7 +300,11 @@ export default function AnnualRateCalculator() {
               </MenuItem>
             ))}
           </Select>
-          {errors.years && <Typography color="error">{errors.years}</Typography>}
+          {errors.years && (
+            <Typography color="error" variant="caption">
+              {errors.years}
+            </Typography>
+          )}
         </FormControl>
       ) : (
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>

@@ -12,21 +12,21 @@ import moment from "moment";
 import { FinalAmountFormulaModal } from "./FinalAmountFormulaModal";
 import { NumericFormat } from "react-number-format";
 
-interface FormData {
+type FormData = {
   initialAmount: number | null;
   years: number | null;
   interestRate: number | null;
   startDate: Date | null;
   endDate: Date | null;
-}
+};
 
-interface FormErrors {
+type FormErrors = {
   initialAmount: string | null;
   years: string | null;
   interestRate: string | null;
   startDate: string | null;
   endDate: string | null;
-}
+};
 
 interface NumberFormatCustomProps {
   onChange: (event: { target: { name: string; value: string } }) => void;
@@ -120,11 +120,6 @@ export default function FinalAmountCalculator() {
     return false;
   };
 
-  const handleInitialAmountChange = (value: string) => {
-    const formattedValue = formatNumber(removeCommas(value));
-    handleInputChange("initialAmount", parseFloat(formattedValue) || null);
-  };
-
   const calculateFinalAmount = () => {
     let period: number;
     if (inputType === "years" && formData.years !== null) {
@@ -145,7 +140,7 @@ export default function FinalAmountCalculator() {
     const initial = formData.initialAmount;
     const rate = formData.interestRate / 100;
     const final = initial * Math.pow(1 + rate, period);
-    setResult(`최종 금액: ${formatNumber(final.toFixed(2))}원`);
+    setResult(`최종 금액: ${formatNumber(final.toFixed(0))}원`);
   };
 
   const handleCalculate = () => {
@@ -281,7 +276,11 @@ export default function FinalAmountCalculator() {
               </MenuItem>
             ))}
           </Select>
-          {errors.years && <Typography color="error">{errors.years}</Typography>}
+          {errors.years && (
+            <Typography color="error" variant="caption">
+              {errors.years}
+            </Typography>
+          )}
         </FormControl>
       ) : (
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
