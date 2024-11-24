@@ -87,7 +87,7 @@ export default function CompoundInterestCalculator() {
       return;
     }
 
-    for (let discount = 0; discount <= 100; discount += 5) {
+    for (let discount = 100; discount >= 0; discount -= 5) {
       const fee = tradeBaseAmount * (exchangeSpread / 100) * (1 - discount / 100);
       const buyDiscount = tradeBaseAmount + fee;
       const sellDiscount = tradeBaseAmount - fee;
